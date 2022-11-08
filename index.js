@@ -6,6 +6,7 @@ import 'dotenv/config'
 import user from "./routes/user.js"
 import project from "./routes/project.js"
 import tags from "./routes/tags.js "
+import s3 from "./routes/s3.js"
 
 const app = express()
 app.use(bodyParser.json())
@@ -19,6 +20,7 @@ try{
 app.use("/user", user)
 app.use("/project", project)
 app.use("/tag", tags)
+app.use("/s3", s3)
 
 let server = app.listen(process.env.APPPORT, () => {
     console.log("server good");
