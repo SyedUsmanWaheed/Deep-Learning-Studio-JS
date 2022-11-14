@@ -4,7 +4,7 @@ import { isUserAuthorized } from "../middleware/authentication.js"
 
 const router = Router()
 
-router.post("/add", add_project)
+router.post("/add",isUserAuthorized, add_project)
 router.get("/list", isUserAuthorized, get_project_list)
 router.post("/addkey", isUserAuthorized, save_dataset_key)
 router.get("/geturl", isUserAuthorized, get_url_from_key)

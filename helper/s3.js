@@ -5,11 +5,6 @@ const region = process.env.AWSREGION
 const key = process.env.S3ACCESSKEY
 const secret_key = process.env.S3SECRETACCESSKEY
 
-console.log(bucket_name)
-console.log(region)
-console.log(key)
-console.log(secret_key)
-
 const s3 = new AWS.S3({
     region,
     accesskeyId: key,

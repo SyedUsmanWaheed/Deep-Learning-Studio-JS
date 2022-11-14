@@ -7,7 +7,7 @@ const { ObjectId } = Schema
 const project_schema = new Schema({
     name: { type: String, required: true },
     type: { type: String, enum: ['ML', 'DL'], required: true },
-    owner: { type: ObjectId, required: true, ref: User },
+    owner: { type: ObjectId, default: null, ref: User },
     dataset_key: { type: String, default: null },
     description: { type: String, required: true },
     tags: [ String ],
