@@ -1,4 +1,5 @@
 import AWS from 'aws-sdk';
+import fs from 'fs';
 
 const bucket_name = process.env.AWSBUCKETNAME
 const region = process.env.AWSREGION
@@ -46,4 +47,20 @@ export const generateGetURL = async (key) => {
         throw new Error(err.message) 
     }
 
+}
+
+export const upload_to_s3 = async (file_path, key) => {
+    const fileStream = fs.createReadStream(file_path)
+    const params =({
+        Bucket: bucket_name,
+        Body: fileStream,
+        Key: key
+    })
+    try{
+        return s3.upload(params).promise()
+
+    }catch(err){
+        console.log(err)
+        throw new Error(err.message) 
+    }
 }

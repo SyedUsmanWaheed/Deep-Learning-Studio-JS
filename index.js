@@ -7,6 +7,7 @@ import user from "./routes/user.js"
 import project from "./routes/project.js"
 import tags from "./routes/tags.js "
 import s3 from "./routes/s3.js"
+import preprocessing from "./routes/pre_processing.js"
 
 const app = express()
 app.use(bodyParser.json())
@@ -21,6 +22,7 @@ app.use("/user", user)
 app.use("/project", project)
 app.use("/tag", tags)
 app.use("/s3", s3)
+app.use("/preprocessing", preprocessing)
 
 let server = app.listen(process.env.APPPORT, () => {
     console.log("server good");

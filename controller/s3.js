@@ -8,6 +8,7 @@ export let signed_url = async (req, res) => {
         dataset: joi.string().required()
     })
     let { error, value } = validation_schema.validate(req.body)
+    
     if (error) {
         return res.json({ error: true, info: error.message })
     }
@@ -15,7 +16,7 @@ export let signed_url = async (req, res) => {
 
         let { dataset } = req.body
 
-        let key = dataset + uuidv4()
+        let key = req.user.user_id + dataset + uuidv4()
 
         let url = await generatePutURL(key)
 
