@@ -11,7 +11,10 @@ export let filter_data = async (req, res, next) => {
         drop_rows_with_null: joi.boolean().required(),
         include_column: joi.array().items(joi.object().keys({
             name: joi.string().required(),
-            include: joi.boolean().required()
+            include: joi.boolean().required(),
+            impute_with: joi.string().required().allow(""),
+            replace_this: joi.string().required().allow(""),
+            replace_with: joi.string().required().allow("")
         }))
     })
     let { error, value } = validation_schema.validate(req.body)
@@ -22,15 +25,14 @@ export let filter_data = async (req, res, next) => {
     try {
         let { project_id, drop_rows_with_null, include_column } = req.body
 
-        let project = await getOne(Project, {_id: project_id} )
-        if(!project){
-            return res.json({error:true, info: "project not found"})
+        let project = await getOne(Project, { _id: project_id })
+        if (!project) {
+            return res.json({ error: true, info: "project not found" })
         }
-        let start_time = Date.now()
         let key = project.dataset_key
-        console.log(Date.now()-start_time, "AFTER GET PROJECT AND KEY")
+
         let df = await dfd.readCSV(await generateGetURL(key))
-        console.log(Date.now()-start_time, "AFTER GENERATE GET URL")
+
         let columns_data = df.ctypes;
 
         let length_in_input = include_column.length
@@ -45,18 +47,36 @@ export let filter_data = async (req, res, next) => {
                 return res.json({ error: true, info: "The Names donot match the name of the columns in dataframe" })
             }
         })
-        console.log(Date.now()-start_time, "AFTER NAME AND LENGTH CHECKS FOR THE DATAFRAME AND INPUT")
+
         let columns_to_drop = include_column.filter(data => !data.include).map(column => column.name)
         df.drop({ columns: columns_to_drop, inplace: true });
-        console.log(Date.now()-start_time, "AFTER DROPING SELECTED COLUMNS")
         if (drop_rows_with_null) {
-            df.dropNa({ axis: 0 })
+            df.dropNa({ axis: 1, inplace: true })
         }
-        console.log(Date.now()-start_time, "AFTER DROPING ROWS")
-        const csv = dfd.toCSV(df, { filePath: `preprocessed${project_id}.csv`, download: true})
-        // console.log(csv)
+        else {
+
+            let filler_values = include_column.map((column_obj, idx) => {
+                if (df.ctypes.$data[idx] !== 'string') {
+                    if (column_obj.impute_with === 'mean') {
+                        return df.column(column_obj.name).mean()
+                    } else {
+                        return df.column(column_obj.name).median()
+                    }
+                } else {
+                    df = df.replace(column_obj.replace_this, column_obj.replace_with, { columns: [column_obj.name] })
+                    return column_obj.impute_with
+                }
+            })
+
+            df = df.fillNa(filler_values, { columns: df.ctypes.$index })
+        }
+        df.print()
+
+        const csv = dfd.toCSV(df, { filePath: `preprocessed${project_id}.csv`, download: true })
+
+
         await upload_to_s3(`preprocessed${project_id}.csv`, `preprocessed${key}`)
-        console.log(Date.now()-start_time, "AFTER UPLOADING FILES TO S3 BUCKET" )
+
         fs.unlink(`preprocessed${project_id}.csv`, function (err) {
             if (err) throw err;
             console.log('File deleted!');
@@ -65,6 +85,7 @@ export let filter_data = async (req, res, next) => {
 
     }
     catch (err) {
+        console.error(err)
         return res.json({ error: true, info: err.message })
     }
 
