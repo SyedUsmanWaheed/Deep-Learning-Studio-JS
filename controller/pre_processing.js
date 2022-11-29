@@ -2,8 +2,9 @@ import joi from "joi"
 import dfd from "danfojs-node";
 import fs from 'fs';
 import { generateGetURL, upload_to_s3 } from "../helper/s3.js";
-import { getOne } from "../services/CRUD.js";
+import { getOne, updateData } from "../services/CRUD.js";
 import { Project } from "../models/project.js";
+import { User } from "../models/user.js";
 
 export let filter_data = async (req, res, next) => {
     let validation_schema = joi.object().keys({
@@ -75,13 +76,17 @@ export let filter_data = async (req, res, next) => {
         const csv = dfd.toCSV(df, { filePath: `preprocessed${project_id}.csv`, download: true })
 
 
-        await upload_to_s3(`preprocessed${project_id}.csv`, `preprocessed${key}`)
+        let uploading = await upload_to_s3(`preprocessed${project_id}.csv`, `preprocessed${key}`)
+        console.log(uploading.Key)
+        let add_updated_key = await updateData(Project, { _id: project_id }, { dataset_key: uploading.Key })
+        
+        let preprocessed_dataset = await generateGetURL(uploading.Key)
 
         fs.unlink(`preprocessed${project_id}.csv`, function (err) {
             if (err) throw err;
             console.log('File deleted!');
         });
-        return res.json({ error: false, info: "Seleceted Preprocessing options have been applied to the dataset", data: dfd.toJSON(df) })
+        return res.json({ error: false, info: "Seleceted Preprocessing options have been applied to the dataset", preprocessed_dataset_url: preprocessed_dataset })
 
     }
     catch (err) {
