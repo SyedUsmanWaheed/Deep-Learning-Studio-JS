@@ -44,6 +44,8 @@ export function updateData(model, filter, data) {
             let updated = await model.updateOne(filter, data)
             if (updated.matchedCount == 1) {
                 resolve("data updated")
+            }else{
+                console.log("booboboo")
             }
         }catch(err){
             reject(err)
